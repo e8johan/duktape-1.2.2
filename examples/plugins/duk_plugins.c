@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dlfcn.h>
+
 #ifdef DUK_CMDLINE_ALLOC_LOGGING
 #include "duk_alloc_logging.h"
 #endif
@@ -16,6 +18,7 @@
 #ifdef DUK_CMDLINE_ALLOC_HYBRID
 #include "duk_alloc_hybrid.h"
 #endif
+
 #include "duktape.h"
 
 #ifdef DUK_CMDLINE_AJSHEAP
@@ -222,6 +225,76 @@ static void debugger_detached(void *udata) {
 }
 #endif
 
+struct plugin_node;
+struct plugin_node {
+    void (*cleanup)();
+    
+    void *handle;
+    
+    struct plugin_node *next;
+} *plugin_list;
+
+int load_plugin(duk_context *ctx, const char *filename) {
+                void *handle;
+        void (*fn_init)(duk_context*);
+        void (*fn_cleanup)();
+        struct plugin_node *node;
+        
+        handle = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
+        if (!handle) {
+            fprintf(stderr, "ERROR(%s): %s\n", filename, dlerror());
+            return -1;
+        }
+        
+        *(void**)(&fn_init) = dlsym(handle, "duk_plugin_init");
+        *(void**)(&fn_cleanup) = dlsym(handle, "duk_plugin_cleanup");
+        
+        if (!fn_init || !fn_cleanup) {
+            fprintf(stderr, "ERROR(%s): could not locate function symbols.\n", filename);
+            if(dlclose(handle)) {
+                fprintf(stderr, "ERROR(%s): %s\n", filename, dlerror());
+            }
+            return -1;
+        }
+        
+        node = (struct plugin_node*)malloc(sizeof(struct plugin_node));
+        
+        if (!node) {
+            fprintf(stderr, "ERROR(%s): could not allocate plugin node.\n", filename);
+            if(dlclose(handle)) {
+                fprintf(stderr, "ERROR(%s): %s\n", filename, dlerror());
+            }
+            return -1;
+        }
+        
+        node->cleanup = fn_cleanup;
+        node->handle = handle;
+        node->next = plugin_list;
+        
+        plugin_list = node;
+        
+        fn_init(ctx);
+
+        return 0;
+}
+
+void init_plugins()
+{
+        plugin_list = 0;
+}
+
+void cleanup_plugins()
+{
+        struct plugin_node *node = plugin_list;
+        
+        while (node) {
+            node->cleanup();
+            dlclose(node->handle);
+            
+            node = node->next;
+        }
+}
+
 #define  ALLOC_DEFAULT  0
 #define  ALLOC_LOGGING  1
 #define  ALLOC_TORTURE  2
@@ -384,7 +457,12 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 
-	/*
+        /*
+         *  Initialize plugin system
+         */
+        init_plugins();
+
+        /*
 	 *  Execute any argument file(s)
 	 */
 
@@ -396,10 +474,21 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		if (handle_file(ctx, arg) != 0) {
-			retval = 1;
-			goto cleanup;
-		}
+		/* 
+                 *  Filenames ending with .js are executed as js 
+                 *  Filenames ending with .so are loaded as plugins
+                 */
+		if (strlen(arg) > 3 && arg[strlen(arg)-3] == '.' && arg[strlen(arg)-2] == 'j' && arg[strlen(arg)-1] == 's') {
+                        if (handle_file(ctx, arg) != 0) {
+                                retval = 1;
+                                goto cleanup;
+                        }
+		} else if (strlen(arg) > 3 && arg[strlen(arg)-3] == '.' && arg[strlen(arg)-2] == 's' && arg[strlen(arg)-1] == 'o') {
+                        if (load_plugin(ctx, arg) != 0) {
+                                retval = 1;
+                                goto cleanup;
+                        }
+                }
 	}
 
 	/*
@@ -419,6 +508,8 @@ int main(int argc, char *argv[]) {
 		ajsheap_dump();
 	}
 #endif
+
+        cleanup_plugins();
 
 	if (ctx) {
 		duk_destroy_heap(ctx);

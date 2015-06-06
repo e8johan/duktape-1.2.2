@@ -11,7 +11,7 @@ DUKTAPE_CMDLINE_SOURCES = \
 CC	= gcc
 CCOPTS	= -Os -pedantic -std=c99 -Wall -fstrict-aliasing -fomit-frame-pointer
 CCOPTS += -I./src
-CCLIBS	= -lm
+CCLIBS	= -lm -ldl
 
 # If you have readline, you may want to enable these.  On some platforms
 # -lreadline also requires -lncurses (e.g. RHEL), so it is added by default
