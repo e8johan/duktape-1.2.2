@@ -26,5 +26,10 @@ CCOPTS += -DDUK_OPT_SELF_TESTS
 #CCOPTS += -DDUK_OPT_DPRINT
 # ...
 
+all: duk prime-check-plugin.so
+
 duk:	$(DUKTAPE_SOURCES) $(DUKTAPE_CMDLINE_SOURCES)
-	$(CC) -o $@ $(DEFINES) $(CCOPTS) $(DUKTAPE_SOURCES) $(DUKTAPE_CMDLINE_SOURCES) $(CCLIBS)
+	$(CC) -o $@ $(DEFINES) $(CCOPTS) $(DUKTAPE_SOURCES) $(DUKTAPE_CMDLINE_SOURCES) $(CCLIBS) -rdynamic
+
+prime-check-plugin.so: examples/plugins/prime-check-plugin.c
+	$(CC) -o $@ $(DEFINES) $(CCOPTS) -shared -fPIC $<

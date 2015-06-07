@@ -227,7 +227,7 @@ static void debugger_detached(void *udata) {
 
 struct plugin_node;
 struct plugin_node {
-    void (*cleanup)();
+    void (*cleanup)(void);
     
     void *handle;
     
@@ -237,10 +237,10 @@ struct plugin_node {
 int load_plugin(duk_context *ctx, const char *filename) {
                 void *handle;
         void (*fn_init)(duk_context*);
-        void (*fn_cleanup)();
+        void (*fn_cleanup)(void);
         struct plugin_node *node;
         
-        handle = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
+        handle = dlopen(filename, RTLD_LAZY | RTLD_LOCAL);
         if (!handle) {
             fprintf(stderr, "ERROR(%s): %s\n", filename, dlerror());
             return -1;
