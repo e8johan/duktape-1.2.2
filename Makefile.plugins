@@ -3,33 +3,128 @@
 #  The example program here is the Duktape command line tool.
 #
 
-DUKTAPE_SOURCES = src/duktape.c
+DUKTAPE_SOURCES_x = \
+	src/duktape.c
+	
+DUKTAPE_SOURCES = \
+	src-separate/duk_alloc_default.c \
+	src-separate/duk_bi_logger.c \
+	src-separate/duk_hbuffer_ops.c \
+	src-separate/duk_js_compiler.c \
+	src-separate/duk_api_buffer.c \
+	src-separate/duk_bi_math.c \
+	src-separate/duk_heap_alloc.c \
+	src-separate/duk_js_executor.c \
+	src-separate/duk_api_call.c \
+	src-separate/duk_bi_number.c \
+	src-separate/duk_heap_hashstring.c \
+	src-separate/duk_js_ops.c \
+	src-separate/duk_api_codec.c \
+	src-separate/duk_bi_object.c \
+	src-separate/duk_heap_markandsweep.c \
+	src-separate/duk_js_var.c \
+	src-separate/duk_api_compile.c \
+	src-separate/duk_bi_pointer.c \
+	src-separate/duk_heap_memory.c \
+	src-separate/duk_lexer.c \
+	src-separate/duk_api_debug.c \
+	src-separate/duk_bi_proxy.c \
+	src-separate/duk_heap_misc.c \
+	src-separate/duk_numconv.c \
+	src-separate/duk_api_heap.c \
+	src-separate/duk_bi_regexp.c \
+	src-separate/duk_heap_refcount.c \
+	src-separate/duk_regexp_compiler.c \
+	src-separate/duk_api_logging.c \
+	src-separate/duk_bi_string.c \
+	src-separate/duk_heap_stringcache.c \
+	src-separate/duk_regexp_executor.c \
+	src-separate/duk_api_memory.c \
+	src-separate/duk_bi_thread.c \
+	src-separate/duk_heap_stringtable.c \
+	src-separate/duk_replacements.c \
+	src-separate/duk_api_object.c \
+	src-separate/duk_bi_thrower.c \
+	src-separate/duk_hobject_alloc.c \
+	src-separate/duk_selftest.c \
+	src-separate/duk_api_stack.c \
+	src-separate/duk_builtins.c \
+	src-separate/duk_hobject_class.c \
+	src-separate/duk_strings.c \
+	src-separate/duk_api_string.c \
+	src-separate/duk_debug_fixedbuffer.c \
+	src-separate/duk_hobject_enum.c \
+	src-separate/duk_tval.c \
+	src-separate/duk_api_var.c \
+	src-separate/duk_debugger.c \
+	src-separate/duk_hobject_finalizer.c \
+	src-separate/duk_unicode_support.c \
+	src-separate/duk_bi_array.c \
+	src-separate/duk_debug_heap.c \
+	src-separate/duk_hobject_misc.c \
+	src-separate/duk_unicode_tables.c \
+	src-separate/duk_bi_boolean.c \
+	src-separate/duk_debug_macros.c \
+	src-separate/duk_hobject_pc2line.c \
+	src-separate/duk_util_bitdecoder.c \
+	src-separate/duk_bi_buffer.c \
+	src-separate/duk_debug_vsnprintf.c \
+	src-separate/duk_hobject_props.c \
+	src-separate/duk_util_bitencoder.c \
+	src-separate/duk_bi_date.c \
+	src-separate/duk_error_augment.c \
+	src-separate/duk_hstring_misc.c \
+	src-separate/duk_util_hashbytes.c \
+	src-separate/duk_bi_duktape.c \
+	src-separate/duk_error_longjmp.c \
+	src-separate/duk_hthread_alloc.c \
+	src-separate/duk_util_hashprime.c \
+	src-separate/duk_bi_error.c \
+	src-separate/duk_error_macros.c \
+	src-separate/duk_hthread_builtins.c \
+	src-separate/duk_util_misc.c \
+	src-separate/duk_bi_function.c \
+	src-separate/duk_error_misc.c \
+	src-separate/duk_hthread_misc.c \
+	src-separate/duk_util_tinyrandom.c \
+	src-separate/duk_bi_global.c \
+	src-separate/duk_error_throw.c \
+	src-separate/duk_hthread_stacks.c \
+	src-separate/duk_bi_json.c \
+	src-separate/duk_hbuffer_alloc.c \
+	src-separate/duk_js_call.c
 
-DUKTAPE_CMDLINE_SOURCES = \
+DUKTAPE_PLUGINS_SOURCES = \
 	examples/plugins/duk_plugins.c
 
-CC	= gcc
-CCOPTS	= -Os -pedantic -std=c99 -Wall -fstrict-aliasing -fomit-frame-pointer
-CCOPTS += -I./src
-CCLIBS	= -lm -ldl
+DUKTAPE_OBJECTS = $(addsuffix .o,  $(basename $(DUKTAPE_SOURCES)))
+DUKTAPE_PLUGINS_OBJECTS = $(addsuffix .o,  $(basename $(DUKTAPE_PLUGINS_SOURCES)))
 
-# If you have readline, you may want to enable these.  On some platforms
-# -lreadline also requires -lncurses (e.g. RHEL), so it is added by default
-# (you may be able to remove it)
-#CCOPTS += -DDUK_CMDLINE_FANCY
-#CCLIBS += -lreadline
-#CCLIBS += -lncurses
+CC	= gcc
+AR	= ar
+LD	= ld
+
+CFLAGS	= -Os -pedantic -std=c99 -Wall -fstrict-aliasing -fomit-frame-pointer
+CFLAGS += -I./src-separate
+CFLAGS_x += -I./src
 
 # Optional feature defines, see: http://duktape.org/guide.html#compiling
-CCOPTS += -DDUK_OPT_SELF_TESTS
-#CCOPTS += -DDUK_OPT_DEBUG
-#CCOPTS += -DDUK_OPT_DPRINT
+CFLAGS += -DDUK_OPT_SELF_TESTS
+#CFLAGS += -DDUK_OPT_DEBUG
+#CFLAGS += -DDUK_OPT_DPRINT
+CFLAGS += -DDUK_OPT_NO_COMMONJS_MODULES
 # ...
 
 all: duk prime-check-plugin.so
 
-duk:	$(DUKTAPE_SOURCES) $(DUKTAPE_CMDLINE_SOURCES)
-	$(CC) -o $@ $(DEFINES) $(CCOPTS) $(DUKTAPE_SOURCES) $(DUKTAPE_CMDLINE_SOURCES) $(CCLIBS) -rdynamic
+duk:	libduktape.a $(DUKTAPE_PLUGINS_OBJECTS)
+	$(CC) -o $@ $(DUKTAPE_PLUGINS_OBJECTS) -L. -lduktape -lm -ldl -rdynamic
 
+libduktape.a: $(DUKTAPE_OBJECTS)
+	$(AR) rcs $@ $+
+	
 prime-check-plugin.so: examples/plugins/prime-check-plugin.c
-	$(CC) -o $@ $(DEFINES) $(CCOPTS) -shared -fPIC $<
+	$(CC) -o $@ $(DEFINES) $(CFLAGS) -shared -fPIC $<
+
+clean:
+	$(RM) $(DUKTAPE_PLUGINS_OBJECTS) $(DUKTAPE_OBJECTS) duk prime-check-plugin.so
